@@ -1,0 +1,1277 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Home, Zap, Lightbulb, Video, Thermometer, RefreshCw, Settings, 
+  Sun, Battery, Flame, Shield, Moon, Check, ChevronRight, 
+  Search, Sliders, Play, X, ArrowUp, ArrowDown, Cloud, Droplets, 
+  Wind, AlertCircle, Sparkles, Tv, Utensils, WashingMachine, DoorOpen, Plug, Download
+} from 'lucide-react';
+
+// --- INITIAL DATA OP BASIS VAN JOUW HOMEY PRO SCREENSHOTS ---
+
+const INITIAL_ROOMS = [
+  { id: 'woonkamer', name: 'Woonkamer & Plafond', icon: 'Tv', activeCount: 0, totalCount: 7, isOn: false, flowOn: 'direct', flowOff: 'direct' },
+  { id: 'keuken', name: 'Keuken & Eetkamer', icon: 'Utensils', activeCount: 0, totalCount: 7, isOn: false, flowOn: 'direct', flowOff: 'direct' },
+  { id: 'gang', name: 'Gang & Meterkast', icon: 'DoorOpen', activeCount: 2, totalCount: 4, isOn: true, flowOn: 'direct', flowOff: 'direct' },
+  { id: 'boven', name: 'Slaapkamer & Zolder', icon: 'Home', activeCount: 1, totalCount: 6, isOn: true, flowOn: 'direct', flowOff: 'direct' },
+  { id: 'tuin', name: 'Tuin', icon: 'Sun', activeCount: 1, totalCount: 2, isOn: true, flowOn: 'direct', flowOff: 'direct' },
+];
+
+const INITIAL_LIGHTS = {
+  woonkamer: [
+    { id: 'wk1', name: 'Led tv kast', isOn: false, brightness: 10, room: 'Woonkamer', selected: true },
+    { id: 'wk2', name: 'Staande lamp (0 W)', isOn: false, brightness: 100, room: 'Woonkamer', selected: true },
+    { id: 'wk3', name: 'Tv kast lamp', isOn: false, brightness: 40, room: 'Woonkamer', selected: true },
+    { id: 'wk4', name: 'Woonkamerplafondlamp 1', isOn: false, brightness: 100, room: 'Plafond', selected: true },
+    { id: 'wk5', name: 'Woonkamerplafondlamp 2', isOn: false, brightness: 100, room: 'Plafond', selected: true },
+    { id: 'wk6', name: 'Woonkamerplafondlamp 3', isOn: false, brightness: 100, room: 'Plafond', selected: true },
+    { id: 'wk7', name: 'Woonkamerplafondlamp 4', isOn: false, brightness: 100, room: 'Plafond', selected: true },
+  ],
+  keuken: [
+    { id: 'kk1', name: 'Keuken led', isOn: false, brightness: 100, room: 'Keuken', selected: true },
+    { id: 'kk2', name: 'Keukenlamp 1', isOn: false, brightness: 100, room: 'Keuken Plafond', selected: true },
+    { id: 'kk3', name: 'Keukenlamp 2', isOn: false, brightness: 100, room: 'Keuken Plafond', selected: true },
+    { id: 'kk4', name: 'Keukenlamp 3', isOn: false, brightness: 100, room: 'Keuken Plafond', selected: true },
+    { id: 'ek1', name: 'Eettafel 1', isOn: false, brightness: 23, room: 'Eetkamer', selected: true },
+    { id: 'ek2', name: 'Eettafel 2', isOn: false, brightness: 23, room: 'Eetkamer', selected: true },
+    { id: 'ek3', name: 'Eettafel 3', isOn: false, brightness: 23, room: 'Eetkamer', selected: true },
+  ],
+  gang: [
+    { id: 'gg1', name: 'Ganglamp', isOn: false, brightness: 70, room: 'Gang', selected: true },
+    { id: 'gg2', name: 'voordeur lamp', isOn: false, brightness: 100, room: 'Gang', selected: true },
+    { id: 'gg3', name: 'Meterkast lamp', isOn: true, brightness: 100, room: 'Gang', selected: true },
+    { id: 'gg4', name: 'Warmtepomp lamp', isOn: true, brightness: 100, room: 'Gang', selected: true },
+  ],
+  boven: [
+    { id: 'sl1', name: 'Stopcontact Björn (0 W)', isOn: false, brightness: 100, room: 'Slaapkamer', selected: true },
+    { id: 'sl2', name: 'Stopcontact Mar (0 W)', isOn: false, brightness: 100, room: 'Slaapkamer', selected: true },
+    { id: 'sl3', name: 'Ventilator (0 W)', isOn: true, brightness: 100, room: 'Slaapkamer', selected: true },
+    { id: 'zl1', name: 'Zolder lamp 1', isOn: false, brightness: 100, room: 'Zolder', selected: true },
+    { id: 'zl2', name: 'Zolder lamp 2', isOn: false, brightness: 100, room: 'Zolder', selected: true },
+    { id: 'zl3', name: 'Zolder lamp 3', isOn: false, brightness: 100, room: 'Zolder', selected: true },
+  ],
+  tuin: [
+    { id: 'tu1', name: 'tuin lamp', isOn: false, brightness: 100, room: 'Tuin', selected: true },
+    { id: 'tu2', name: 'stroom camera tuin', isOn: true, brightness: 100, room: 'Tuin', selected: true },
+  ]
+};
+
+const INITIAL_CAMERAS = [
+  { 
+    id: 'cam_tuin', 
+    name: 'Tuin camera', 
+    zone: 'Tuin (Stroom camera: Aan)',
+    status: 'LIVE', 
+    timestamp: '24-10-2026 14:30:12',
+    image: 'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?auto=format&fit=crop&w=900&q=80' 
+  },
+  { 
+    id: 'cam_deurbel', 
+    name: 'Deurbel', 
+    zone: 'Gang (Voeding: 234V / 0W)',
+    status: 'LIVE', 
+    timestamp: '24-10-2026 14:30:12',
+    image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=900&q=80' 
+  }
+];
+
+const INITIAL_CLIMATE_ZONES = [
+  { id: 'cl_wk', name: 'Woonkamer', temp: 21.1, humidity: 52, battery: 94, highlight: true },
+  { id: 'cl_bk', name: 'Badkamer', temp: 22.1, humidity: 58, battery: 100, highlight: false },
+  { id: 'cl_sk', name: 'Slaapkamer', temp: 20.8, humidity: 57, battery: 100, highlight: false },
+  { id: 'cl_zl', name: 'Zolder temperatuur', temp: 19.9, humidity: 62, battery: 100, highlight: false },
+  { id: 'cl_mk', name: 'Meterkast', temp: 23.0, humidity: 51, battery: 100, highlight: false },
+];
+
+const INITIAL_APPLIANCES = [
+  { id: 'app_wm', name: 'Wasmachine', zone: 'Wasruimte', status: 'Spoelen', progress: 42, remaining: '00:50', active: true },
+  { id: 'app_dr', name: 'Droger', zone: 'Wasruimte', status: 'Geen', progress: 1, remaining: '04:30', active: false },
+  { id: 'app_vw', name: 'Vaatwasser', zone: 'Keuken', status: 'Aangezet (Start op afstand)', progress: 0, remaining: '165:00', active: true },
+  { id: 'app_ov', name: 'Oven', zone: 'Keuken', status: '58 °C (Klaar)', progress: 100, remaining: '00:00', active: false },
+  { id: 'app_ri', name: 'RI (Robotstofzuiger)', zone: 'Gang', status: 'Stofzuigen • Grondig (2x)', progress: 97, remaining: 'Water: 20', active: true },
+];
+
+const HOURLY_PRICES = [
+  { hour: '00', price: 15.1, level: 'low' },
+  { hour: '01', price: 14.3, level: 'low' },
+  { hour: '02', price: 13.9, level: 'low' },
+  { hour: '03', price: 14.1, level: 'low' },
+  { hour: '04', price: 14.8, level: 'low' },
+  { hour: '05', price: 16.4, level: 'low' },
+  { hour: '06', price: 19.1, level: 'med' },
+  { hour: '07', price: 21.5, level: 'med' },
+  { hour: '08', price: 22.0, level: 'med' },
+  { hour: '09', price: 19.2, level: 'med' },
+  { hour: '10', price: 16.5, level: 'low' },
+  { hour: '11', price: 14.9, level: 'low' },
+  { hour: '12', price: 13.5, level: 'low' },
+  { hour: '13', price: 13.8, level: 'low' },
+  { hour: '14', price: 15.2, level: 'low', current: true },
+  { hour: '15', price: 17.6, level: 'low' },
+  { hour: '16', price: 20.1, level: 'med' },
+  { hour: '17', price: 23.8, level: 'high' },
+  { hour: '18', price: 26.1, level: 'high' },
+  { hour: '19', price: 25.4, level: 'high' },
+  { hour: '20', price: 22.1, level: 'med' },
+  { hour: '21', price: 19.5, level: 'med' },
+  { hour: '22', price: 18.2, level: 'low' },
+  { hour: '23', price: 16.9, level: 'low' },
+];
+
+const AVAILABLE_FLOWS = [
+  { id: 'direct', name: 'Rechtstreeks apparaten schakelen' },
+  { id: 'flow_bedtijd', name: 'Scene: Bedtijd (Thuis)' },
+  { id: 'flow_woonkamer', name: 'Scene: Woonkamer (Thuis)' },
+  { id: 'flow_exotisch', name: 'Scene: Exotisch (Begane grond - 2 Lights)' },
+  { id: 'flow_nachtbeeld', name: 'Scene: Nachtbeeld (Plafond - 4 Lights)' },
+  { id: 'flow_afval', name: 'Flow: Afval Herinnering 2.0 (20:00 + 60m)' },
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('overzicht');
+  const [currentTime, setCurrentTime] = useState('14:30:00');
+  
+  // State voor jouw Homey apparaten
+  const [rooms, setRooms] = useState(INITIAL_ROOMS);
+  const [lights, setLights] = useState(INITIAL_LIGHTS);
+  const [selectedRoomId, setSelectedRoomId] = useState('woonkamer');
+  const [lightSearch, setLightSearch] = useState('');
+  
+  // Scenes uit jouw screenshot (Bedtijd, Woonkamer, Exotisch, Nachtbeeld)
+  const [scenes, setScenes] = useState({
+    bedtijd: true,
+    woonkamer: true,
+    exotisch: false,
+    nachtbeeld: false
+  });
+
+  // Modals
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showEditListModal, setShowEditListModal] = useState(false);
+  const [enlargedCamera, setEnlargedCamera] = useState(null);
+  
+  // Homey API Connectie State (met jouw Homey ID uit je adresbalk alvast ingevuld!)
+  const [homeyId, setHomeyId] = useState('66daf0c0c49b5d495d50f8d1');
+  const [homeyIp, setHomeyIp] = useState('192.168.1.50');
+  const [homeyApiKey, setHomeyApiKey] = useState('');
+  const [apiConnected, setApiConnected] = useState(true);
+  const [liveStatusText, setLiveStatusText] = useState('Gekoppeld aan Homey Pro (ID: 66daf0...f8d1)');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Klok
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Herbereken aantallen per kamer
+  useEffect(() => {
+    setRooms(prevRooms => prevRooms.map(room => {
+      const roomLights = lights[room.id] || [];
+      const selectedLights = roomLights.filter(l => l.selected);
+      const activeCount = selectedLights.filter(l => l.isOn).length;
+      return {
+        ...room,
+        activeCount,
+        totalCount: selectedLights.length,
+        isOn: activeCount > 0
+      };
+    }));
+  }, [lights]);
+
+  // Echte Homey API Call functie (wanneer API key is ingevuld)
+  const fetchHomeyData = async () => {
+    setIsRefreshing(true);
+    if (homeyApiKey && homeyIp) {
+      try {
+        const res = await fetch(`http://${homeyIp}/api/manager/devices/device/`, { headers: { 'Authorization': `Bearer ${homeyApiKey}` }
+        });
+        if (res.ok) {
+          setLiveStatusText(`Live verbonden met ${homeyIp}`);
+          setApiConnected(true);
+        }
+      } catch (err) {
+        // Fallback naar lokale state als browser CORS blokkeert in sandbox
+        setLiveStatusText('Sandbox modus (Download HTML voor directe LAN-toegang)');
+      }
+    }
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
+  // Toggle een heel kamer-blok
+  const toggleRoom = (roomId) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+    const newState = !room.isOn;
+    setLights(prev => ({
+      ...prev,
+      [roomId]: (prev[roomId] || []).map(l => l.selected ? { ...l, isOn: newState } : l)
+    }));
+  };
+
+  // Toggle 1 losse lamp of schakelaar
+  const toggleLight = (roomId, lightId) => {
+    setLights(prev => ({
+      ...prev,
+      [roomId]: prev[roomId].map(l => l.id === lightId ? { ...l, isOn: !l.isOn } : l)
+    }));
+  };
+
+  // Dimmer aanpassen
+  const changeBrightness = (roomId, lightId, value) => {
+    const numVal = Number(value);
+    setLights(prev => ({
+      ...prev,
+      [roomId]: prev[roomId].map(l => l.id === lightId ? { 
+        ...l, 
+        brightness: numVal,
+        isOn: numVal > 0 ? true : l.isOn
+      } : l)
+    }));
+  };
+
+  // Alles aan / Alles uit
+  const setAllLights = (state) => {
+    const updated = {};
+    Object.keys(lights).forEach(rId => {
+      updated[rId] = lights[rId].map(l => ({ ...l, isOn: state }));
+    });
+    setLights(updated);
+  };
+
+  // Volgorde wijzigen in popup
+  const moveLightInList = (roomId, index, direction) => {
+    const list = [...lights[roomId]];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+    const temp = list[index];
+    list[index] = list[targetIndex];
+    list[targetIndex] = temp;
+    setLights(prev => ({ ...prev, [roomId]: list }));
+  };
+
+  const toggleLightSelection = (roomId, lightId) => {
+    setLights(prev => ({
+      ...prev,
+      [roomId]: prev[roomId].map(l => l.id === lightId ? { ...l, selected: !l.selected } : l)
+    }));
+  };
+
+  const totalActiveLights = Object.values(lights)
+    .flat()
+    .filter(l => l.selected && l.isOn).length;
+  const totalSelectedLights = Object.values(lights)
+    .flat()
+    .filter(l => l.selected).length;
+
+  return (
+    <div className="min-h-screen bg-[#0b111a] text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200 flex flex-col justify-between">
+      
+      {/* TOP NAVIGATION BAR */}
+      <header className="border-b border-slate-800/80 bg-[#0f1722]/90 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-8 py-3">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          
+          {/* Left Greeting & Subtext */}
+          <div>
+            <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase text-amber-400/90">
+              <span>VANDAAG IN STRIJEN</span>
+              <span className="text-slate-500">•</span>
+              <span className="font-mono text-slate-300">{currentTime}</span>
+            </div>
+            <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              {activeTab === 'overzicht' && 'Thuis Overzicht'}
+              {activeTab === 'energie' && 'Energie & Verbruik in beeld.'}
+              {activeTab === 'verlichting' && 'Licht & Schakelaars per ruimte.'}
+              {activeTab === 'cameras' && 'Camera\'s & Deurbel.'}
+              {activeTab === 'klimaat' && 'Klimaat & Sensoren per kamer.'}
+            </h1>
+            <p className="text-xs text-slate-400">
+              {liveStatusText}
+            </p>
+          </div>
+
+          {/* Center Navigation Pills */}
+          <nav className="flex items-center bg-[#141e2d] p-1 rounded-xl border border-slate-800/90 shadow-inner overflow-x-auto">
+            {[
+              { id: 'overzicht', label: 'Overzicht', icon: Home },
+              { id: 'energie', label: 'Energie & Was', icon: Zap },
+              { id: 'verlichting', label: 'Verlichting', icon: Lightbulb },
+              { id: 'cameras', label: "Camera's", icon: Video },
+              { id: 'klimaat', label: 'Klimaat', icon: Thermometer },
+            ].map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${ isActive ? 'bg-gradient-to-b from-amber-500/25 to-amber-600/15 text-amber-300 border border-amber-500/40 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }`} > <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2.5">
+            <button 
+              onClick={fetchHomeyData}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#162030] hover:bg-[#1e2b40] text-slate-200 border border-slate-700/70 text-xs font-medium transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isRefreshing ? 'animate-spin text-amber-400' : ''}`} /> <span>Vernieuwen</span> </button>  <button onClick={() => setShowSettingsModal(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-semibold transition shadow-sm" > <span className={`w-2 h-2 rounded-full ${apiConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
+              <Settings className="w-3.5 h-3.5 text-amber-400" />
+              <span>Homey-instellingen</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT CONTAINER */}
+      <main className="max-w-[1600px] w-full mx-auto px-4 lg:px-8 py-6 flex-1 space-y-6">
+
+        {/* TOP 5 STATUS CARDS (RECHTSTREEKS UIT JOUW SCREENSHOTS) */}
+        {(activeTab === 'overzicht' || activeTab === 'energie') && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* 1. Connect Energiemeter - Netto */}
+            <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 shadow-lg relative overflow-hidden">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-400 font-medium">Connect energiemeter</p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-bold text-emerald-400">-468</span>
+                      <span className="text-xs text-slate-400 font-semibold">W</span>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  Teruglevering
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-3">P1 geleverd: 0 W • P1 terug: 501 W</p>
+              <div className="mt-2 pt-2 border-t border-slate-800/80 flex justify-between text-[11px] text-slate-500">
+                <span>Dagelijks totaal</span>
+                <span className="text-slate-300 font-semibold">3.86 kWh</span>
+              </div>
+            </div>
+
+            {/* 2. Homey Energy Dongle */}
+            <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
+                    <Plug className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-400 font-medium">Homey Energy Dongle</p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-bold text-white">36</span>
+                      <span className="text-xs text-slate-400 font-semibold">W</span>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                  Actief
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-3">Import: 1734.5 / 1238.9 kWh</p>
+              <div className="mt-2 pt-2 border-t border-slate-800/80 flex justify-between text-[11px] text-slate-500">
+                <span>Totaal geëxporteerd</span>
+                <span className="text-slate-300 font-semibold">573.0 / 1434.8 kWh</span>
+              </div>
+            </div>
+
+            {/* 3. Zonnepanelen & Thuisbatterij */}
+            <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                    <Sun className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-400 font-medium">Zonne-opwek (P1 terug)</p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-bold text-white">501</span>
+                      <span className="text-xs text-slate-400 font-semibold">W</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-3">Zonneplan dynamisch tarief actief</p>
+              <div className="mt-2 pt-2 border-t border-slate-800/80 flex justify-between text-[11px] text-slate-500">
+                <span>Huidige uurprijs</span>
+                <span className="text-emerald-400 font-semibold">15,2 ct/kWh</span>
+              </div>
+            </div>
+
+            {/* 4. Wasmachine & Droger Status */}
+            <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                    <WashingMachine className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-400 font-medium">Wasmachine (Spoelen)</p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-bold text-white">42</span>
+                      <span className="text-xs text-slate-400 font-semibold">%</span>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                  00:50
+                </span>
+              </div>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                <div className="bg-indigo-400 h-full rounded-full" style={{ width: '42%' }} />
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">Droger: 1% (04:30) • Vaatwasser: Aan</p>
+            </div>
+
+            {/* 5. Robotstofzuiger RI */}
+            <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-400 font-medium">Robotstofzuiger (RI)</p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-bold text-white">97</span>
+                      <span className="text-xs text-slate-400 font-semibold">%</span>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30">
+                  Grondig 2x
+                </span>
+              </div>
+              <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                <div className="bg-teal-400 h-full rounded-full" style={{ width: '97%' }} />
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">Modus: Stofzuigen • Waterverbruik: 20</p>
+            </div>
+          </div>
+        )}
+
+        {/* ==================== TAB 1: OVERZICHT ==================== */}
+        {activeTab === 'overzicht' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* Left Column: Verlichting (Jouw kamers & lampen) */}
+              <div className="lg:col-span-6 bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-amber-400" />
+                      <h2 className="text-sm font-bold text-white">Verlichting & Schakelaars</h2>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <button 
+                        onClick={() => setShowSettingsModal(true)}
+                        className="text-slate-400 hover:text-amber-300 flex items-center gap-1 transition"
+                      >
+                        <Settings className="w-3.5 h-3.5" /> Groepen
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('verlichting')}
+                        className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-0.5 transition"
+                      >
+                        Alle {totalSelectedLights} apparaten <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Two columns inside Verlichting Card */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    {/* Left sub-column: Belangrijkste individuele lampen uit Woonkamer/Keuken/Gang */}
+                    <div className="space-y-2.5">
+                      {[
+                        { roomId: 'woonkamer', light: lights.woonkamer[0] }, // Led tv kast
+                        { roomId: 'woonkamer', light: lights.woonkamer[2] }, // Tv kast lamp
+                        { roomId: 'keuken', light: lights.keuken[0] },       // Keuken led
+                        { roomId: 'keuken', light: lights.keuken[4] },       // Eettafel 1
+                        { roomId: 'gang', light: lights.gang[0] },           // Ganglamp
+                        { roomId: 'tuin', light: lights.tuin[0] },           // tuin lamp
+                      ].map(({ roomId, light }) => (
+                        <div 
+                          key={light.id}
+                          className={`p-3 rounded-xl border transition flex items-center justify-between ${
+                            light.isOn 
+                              ? 'bg-gradient-to-r from-amber-500/15 to-amber-500/5 border-amber-500/40' 
+                              : 'bg-[#172334]/70 border-slate-800/80'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`p-2 rounded-lg ${light.isOn ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-500'}`}> <Lightbulb className="w-4 h-4" /> </div> <div className="truncate"> <p className="text-xs font-semibold text-white truncate">{light.name}</p> <p className="text-[10px] text-slate-400"> {light.room} • {light.isOn ? `Aan (${light.brightness}%)` : 'Uit'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => toggleLight(roomId, light.id)}
+                            className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center shrink-0 ${
+                              light.isOn ? 'bg-amber-400 justify-end' : 'bg-slate-700 justify-start'
+                            }`}
+                          >
+                            <span className="w-5 h-5 rounded-full bg-slate-950 shadow-md transition-transform" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Right sub-column: Jouw Kamergroepen + Alles schakelaar */}
+                    <div className="space-y-2.5">
+                      {rooms.map(room => (
+                        <div 
+                          key={room.id}
+                          className={`p-3 rounded-xl border transition flex items-center justify-between ${
+                            room.isOn 
+                              ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/10 border-amber-500/40' 
+                              : 'bg-[#172334]/70 border-slate-800/80'
+                          }`}
+                        >
+                          <div 
+                            onClick={() => { setSelectedRoomId(room.id); setActiveTab('verlichting'); }}
+                            className="cursor-pointer min-w-0"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-white truncate">{room.name}</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {room.activeCount} van {room.totalCount} aan
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => toggleRoom(room.id)}
+                            className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center shrink-0 ${
+                              room.isOn ? 'bg-amber-400 justify-end' : 'bg-slate-700 justify-start'
+                            }`}
+                          >
+                            <span className="w-5 h-5 rounded-full bg-slate-950 shadow-md" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Alle lampen master switch */}
+                      <div 
+                        className={`p-3 rounded-xl border transition flex items-center justify-between ${ totalActiveLights > 0 ? 'bg-gradient-to-r from-amber-500/25 to-amber-600/10 border-amber-500/50' : 'bg-[#172334]/70 border-slate-800/80' }`} > <div> <span className="text-xs font-bold text-amber-300">Alle lampen</span> <p className="text-[10px] text-slate-400 mt-0.5"> {totalActiveLights > 0 ? `${totalActiveLights} actief` : 'Alles uitgeschakeld'}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => setAllLights(totalActiveLights === 0)}
+                          className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center ${
+                            totalActiveLights > 0 ? 'bg-amber-400 justify-end' : 'bg-slate-700 justify-start'
+                          }`}
+                        >
+                          <span className="w-5 h-5 rounded-full bg-slate-950 shadow-md" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                  <span>{totalActiveLights} van {totalSelectedLights} apparaten aan</span>
+                  <span>Woonkamer: 21.1 °C • Badkamer: 22.1 °C</span>
+                </div>
+              </div>
+
+              {/* Right Column: Camera's (Tuin camera & Deurbel) + Huishoudelijke apparaten */}
+              <div className="lg:col-span-6 space-y-6 flex flex-col justify-between">
+                
+                {/* Camera's Card */}
+                <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <Video className="w-4 h-4 text-sky-400" />
+                      <h2 className="text-sm font-bold text-white">Camera's & Deurbel</h2>
+                    </div>
+                    <button 
+                      onClick={() => setActiveTab('cameras')}
+                      className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-0.5"
+                    >
+                      Groot scherm <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
+                    {INITIAL_CAMERAS.map(cam => (
+                      <div 
+                        key={cam.id} 
+                        className="group relative rounded-xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video"
+                      >
+                        <img 
+                          src={cam.image} 
+                          alt={cam.name} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-90"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/60" />
+                        
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-900/85 backdrop-blur-md text-[11px] font-semibold text-white border border-slate-700/60">
+                            {cam.name}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold tracking-wider uppercase flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            LIVE
+                          </span>
+                        </div>
+
+                        <div className="absolute bottom-2.5 left-2.5 text-[10px] text-slate-300">
+                          {cam.zone}
+                        </div>
+
+                        <button 
+                          onClick={() => setEnlargedCamera(cam)}
+                          className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-slate-900/85 hover:bg-slate-800 text-[11px] font-medium text-slate-200 border border-slate-700/70 backdrop-blur-md transition"
+                        >
+                          Vergroten
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Wasmachine, Droger, Vaatwasser, Oven & Robotstofzuiger Status */}
+                <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <WashingMachine className="w-4 h-4 text-indigo-400" />
+                      <h2 className="text-sm font-bold text-white">Wasruimte, Keuken & Robotstofzuiger</h2>
+                    </div>
+                    <span className="text-[11px] text-slate-400">Live apparaatstatus</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    {INITIAL_APPLIANCES.slice(0, 4).map(app => (
+                      <div key={app.id} className="p-3 rounded-xl bg-[#172334]/70 border border-slate-800/80 flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">{app.name}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">{app.zone}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">{app.status}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-xs font-bold ${app.active ? 'text-amber-300' : 'text-slate-400'}`}>
+                            {app.progress}%
+                          </span>
+                          <p className="text-[10px] text-slate-500">{app.remaining}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* BOTTOM 4 SCENE CARDS UIT JOUW SCREENSHOT (Bedtijd, Woonkamer, Exotisch, Nachtbeeld) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* 1. Bedtijd (Thuis) */}
+              <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-300">
+                    <Moon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Thuis</p>
+                    <h3 className="text-sm font-bold text-white">Bedtijd</h3>
+                    <p className="text-[11px] text-slate-400">{scenes.bedtijd ? 'Aangezet' : 'Uitgeschakeld'}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setScenes(s => ({ ...s, bedtijd: !s.bedtijd }))}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
+                    scenes.bedtijd 
+                      ? 'bg-purple-500/20 text-purple-200 border-purple-500/40' 
+                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  {scenes.bedtijd ? 'Actief' : 'Starten'}
+                </button>
+              </div>
+
+              {/* 2. Woonkamer (Thuis) */}
+              <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300">
+                    <Home className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Thuis</p>
+                    <h3 className="text-sm font-bold text-white">Woonkamer</h3>
+                    <p className="text-[11px] text-slate-400">{scenes.woonkamer ? 'Aangezet' : 'Uitgeschakeld'}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setScenes(s => ({ ...s, woonkamer: !s.woonkamer }))}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
+                    scenes.woonkamer 
+                      ? 'bg-amber-500/20 text-amber-200 border-amber-500/40' 
+                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  {scenes.woonkamer ? 'Actief' : 'Starten'}
+                </button>
+              </div>
+
+              {/* 3. Exotisch (Begane grond - 2 Lights) */}
+              <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Begane grond</p>
+                    <h3 className="text-sm font-bold text-white">Exotisch</h3>
+                    <p className="text-[11px] text-slate-400">2 Lights scene</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setScenes(s => ({ ...s, exotisch: !s.exotisch }))}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
+                    scenes.exotisch 
+                      ? 'bg-rose-500/20 text-rose-200 border-rose-500/40' 
+                      : 'bg-slate-800 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  {scenes.exotisch ? 'Actief' : 'Activeren'}
+                </button>
+              </div>
+
+              {/* 4. Nachtbeeld (Plafond - 4 Lights) */}
+              <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/25 text-sky-300">
+                    <Lightbulb className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Plafond Woonkamer</p>
+                    <h3 className="text-sm font-bold text-white">Nachtbeeld</h3>
+                    <p className="text-[11px] text-slate-400">4 Lights groep</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setScenes(s => ({ ...s, nachtbeeld: !s.nachtbeeld }))}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${ scenes.nachtbeeld ? 'bg-sky-500/20 text-sky-200 border-sky-500/40' : 'bg-slate-800 text-slate-400 border-slate-700' }`} > {scenes.nachtbeeld ? 'Actief' : 'Activeren'} </button> </div> </div> </div> )}  {/* ==================== TAB 2: ENERGIE & WASRUIMTE ==================== */} {activeTab === 'energie' && ( <div className="space-y-6"> <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">  {/* Dynamische Stroomprijzen Bar Chart */} <div className="lg:col-span-7 bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg flex flex-col justify-between"> <div> <div className="flex items-center justify-between pb-4 border-b border-slate-800/80"> <div> <h2 className="text-sm font-bold text-white">Dynamische Stroomprijzen (Zonneplan)</h2> <p className="text-xs text-slate-400">Uurprijzen vandaag (24-10-2026)</p> </div> <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-sky-500 text-slate-950"> Vandaag </span> </div>  <div className="grid grid-cols-3 gap-4 my-4"> <div className="bg-[#172334]/60 p-3 rounded-xl border border-slate-800/70"> <p className="text-[10px] text-slate-400 uppercase">Laagste uurprijs</p> <p className="text-lg font-bold text-emerald-400 mt-0.5">13,5 ct</p> <p className="text-[10px] text-slate-500">12:00 uur</p> </div> <div className="bg-[#172334]/60 p-3 rounded-xl border border-slate-800/70"> <p className="text-[10px] text-slate-400 uppercase">Hoogste uurprijs</p> <p className="text-lg font-bold text-rose-400 mt-0.5">26,1 ct</p> <p className="text-[10px] text-slate-500">18:00 uur</p> </div> <div className="bg-[#172334]/60 p-3 rounded-xl border border-slate-800/70"> <p className="text-[10px] text-slate-400 uppercase">Nu (14:30)</p> <p className="text-lg font-bold text-amber-300 mt-0.5">15,2 ct</p> <p className="text-[10px] text-slate-500">Goedkoop blok</p> </div> </div>  {/* 24-hour Bar Graph */} <div className="mt-6 pt-4 px-2"> <div className="h-44 flex items-end justify-between gap-1.5 border-b border-slate-800 pb-2"> {HOURLY_PRICES.map((item, idx) => { const heightPct = Math.max(20, Math.round((item.price / 28) * 100)); let barColor = 'bg-emerald-400/85 hover:bg-emerald-300'; if (item.level === 'med') barColor = 'bg-amber-400/85 hover:bg-amber-300'; if (item.level === 'high') barColor = 'bg-rose-400/85 hover:bg-rose-300';  return ( <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end"> <div className="opacity-0 group-hover:opacity-100 absolute -top-7 bg-slate-900 text-[10px] text-white px-1.5 py-0.5 rounded border border-slate-700 whitespace-nowrap z-10 pointer-events-none transition"> {item.hour}:00 - {item.price} ct </div> <div style={{ height: `${heightPct}%` }} 
+                              className={`w-full rounded-t-md transition-all ${barColor}${
+                                item.current ? 'ring-2 ring-white shadow-lg' : ''
+                              }`} 
+                            />
+                            <span className="text-[9px] text-slate-500 mt-1.5 font-mono">{item.hour}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Card: Jouw Apparaten (Wasmachine, Droger, Vaatwasser, Oven, Stofzuiger) */}
+              <div className="lg:col-span-5 bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <WashingMachine className="w-4 h-4 text-amber-400" />
+                      <div>
+                        <h2 className="text-sm font-bold text-white">Slimme Apparaten & Energieverbruik</h2>
+                        <p className="text-xs text-slate-400">Live status uit Wasruimte, Keuken & Gang</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {INITIAL_APPLIANCES.map((app) => (
+                      <div key={app.id} className="p-3.5 rounded-xl bg-[#172334]/60 border border-slate-800/80">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-white">{app.name}</span>
+                            <span className="ml-2 text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">{app.zone}</span>
+                          </div>
+                          <span className="text-xs font-bold text-amber-300">{app.progress}%</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                          <span>Status: {app.status}</span>
+                          <span>Resterend: {app.remaining}</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full ${app.active ? 'bg-amber-400' : 'bg-slate-600'}`} style={{ width: `${Math.max(5, app.progress)}%` }} 
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* ==================== TAB 3: VERLICHTING ==================== */}
+        {activeTab === 'verlichting' && (
+          <div className="space-y-6">
+            <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg">
+              
+              {/* Top Header */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+                <div className="flex items-center gap-2.5">
+                  <Lightbulb className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <h2 className="text-base font-bold text-white">Jouw verlichting & stopcontacten</h2>
+                    <p className="text-xs text-slate-400">Alle 26 gekoppelde lampen en slimme stekkers uit jouw Homey Pro.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button 
+                    onClick={() => setAllLights(true)}
+                    className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition shadow-md"
+                  >
+                    Alles aan
+                  </button>
+                  <button 
+                    onClick={() => setAllLights(false)}
+                    className="px-4 py-2 rounded-xl bg-[#192537] hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-xs transition"
+                  >
+                    Alles uit
+                  </button>
+                </div>
+              </div>
+
+              {/* Master-Detail Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5">
+                
+                {/* Left Column: Kamergroepen */}
+                <div className="lg:col-span-4 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs text-slate-400 px-1 mb-2">
+                    <span className="font-semibold uppercase tracking-wider text-[11px]">Verdiepingen & Kamers</span>
+                    <span>{totalActiveLights} actief</span>
+                  </div>
+
+                  {rooms.map(room => {
+                    const isSelected = selectedRoomId === room.id;
+                    return (
+                      <div 
+                        key={room.id}
+                        onClick={() => setSelectedRoomId(room.id)}
+                        className={`p-3.5 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                          isSelected 
+                            ? 'bg-[#1a273a] border-sky-500/60 ring-1 ring-sky-500/30' 
+                            : 'bg-[#162131]/70 border-slate-800/80 hover:bg-[#192537]'
+                        }`}
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-white">{room.name}</p>
+                          <p className="text-[11px] text-slate-400">{room.activeCount} van {room.totalCount} aan</p>
+                        </div>
+
+                        <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => toggleRoom(room.id)}
+                            className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center ${
+                              room.isOn ? 'bg-amber-400 justify-end' : 'bg-slate-700 justify-start'
+                            }`}
+                          >
+                            <span className="w-5 h-5 rounded-full bg-slate-950 shadow-md" />
+                          </button>
+                          <ChevronRight className="w-4 h-4 text-slate-500" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Right Column: Individuele Lampen + Dimniveau */}
+                <div className="lg:col-span-8 bg-[#0f1723] border border-slate-800/90 rounded-2xl p-5">
+                  {(() => {
+                    const currentRoom = rooms.find(r => r.id === selectedRoomId) || rooms[0];
+                    const roomLights = (lights[currentRoom.id] || [])
+                      .filter(l => l.selected)
+                      .filter(l => l.name.toLowerCase().includes(lightSearch.toLowerCase()));
+
+                    return (
+                      <>
+                        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+                          <div>
+                            <h3 className="text-sm font-bold text-white">{currentRoom.name}</h3>
+                            <p className="text-xs text-slate-400">Schakel of dim elk apparaat afzonderlijk.</p>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => setShowEditListModal(true)}
+                              className="px-3 py-1.5 rounded-lg bg-[#162233] hover:bg-slate-800 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition"
+                            >
+                              <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                              Lijst aanpassen
+                            </button>
+                            <button
+                              onClick={() => toggleRoom(currentRoom.id)}
+                              className={`w-11 h-6 rounded-full transition-colors p-0.5 flex items-center ${
+                                currentRoom.isOn ? 'bg-amber-400 justify-end' : 'bg-slate-700 justify-start'
+                              }`}
+                            >
+                              <span className="w-5 h-5 rounded-full bg-slate-950 shadow-md" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Search Input */}
+                        <div className="relative my-4">
+                          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input 
+                            type="text"
+                            value={lightSearch}
+                            onChange={(e) => setLightSearch(e.target.value)}
+                            placeholder={`Zoek een lamp in ${currentRoom.name}...`} className="w-full bg-[#152030] border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50" /> </div>  {/* Dimmers List */} <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1"> {roomLights.map(light => ( <div key={light.id} className="p-3.5 rounded-xl bg-[#141f2e] border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4" > <div className="flex items-center justify-between sm:w-64"> <div className="flex items-center gap-2.5 min-w-0"> <Lightbulb className={`w-4 h-4 shrink-0 ${light.isOn ? 'text-amber-400' : 'text-slate-600'}`} />
+                                  <div className="truncate">
+                                    <span className="text-xs font-semibold text-white block truncate">{light.name}</span>
+                                    <span className="text-[10px] text-slate-500">{light.room}</span>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => toggleLight(currentRoom.id, light.id)}
+                                  className={`w-10 h-5 rounded-full transition-colors p-0.5 flex items-center shrink-0 ${ light.isOn ? 'bg-amber-400 justify-end' : 'bg-slate-700 justify-start' }`} > <span className="w-4 h-4 rounded-full bg-slate-950" /> </button> </div>  <div className="flex-1 flex items-center gap-3"> <input type="range" min="0" max="100" value={light.isOn ? light.brightness : 0} onChange={(e) => changeBrightness(currentRoom.id, light.id, e.target.value)} className="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer" /> <span className="text-xs font-mono text-slate-300 w-10 text-right"> {light.isOn ? `${light.brightness}%` : '0%'}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==================== TAB 4: CAMERA'S ==================== */}
+        {activeTab === 'cameras' && (
+          <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+              <div className="flex items-center gap-2.5">
+                <Video className="w-5 h-5 text-sky-400" />
+                <div>
+                  <h2 className="text-base font-bold text-white">Camera's & Deurbel</h2>
+                  <p className="text-xs text-slate-400">Tuin camera (stroom camera tuin: Aan) en Deurbel (Gang: 234V).</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+              {INITIAL_CAMERAS.map(cam => (
+                <div key={cam.id} className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 flex flex-col">
+                  <div className="px-4 py-2.5 bg-[#162232] border-b border-slate-800 flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">{cam.name} — {cam.zone}</span>
+                    <span className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      Actief
+                    </span>
+                  </div>
+
+                  <div className="relative aspect-video">
+                    <img src={cam.image} alt={cam.name} className="w-full h-full object-cover" />
+                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-slate-950/80 text-[11px] font-mono text-slate-300 border border-slate-800">
+                      {cam.timestamp}
+                    </div>
+                    <button 
+                      onClick={() => setEnlargedCamera(cam)}
+                      className="absolute bottom-3 right-3 px-3 py-1.5 rounded-xl bg-slate-950/85 hover:bg-slate-900 text-xs font-semibold text-white border border-slate-700 backdrop-blur-md transition"
+                    >
+                      Volledig scherm
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ==================== TAB 5: KLIMAAT ==================== */}
+        {activeTab === 'klimaat' && (
+          <div className="space-y-6">
+            <div className="bg-[#131d2b] border border-slate-800/90 rounded-2xl p-5 shadow-lg">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
+                <div className="flex items-center gap-2.5">
+                  <Thermometer className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <h2 className="text-base font-bold text-white">Klimaat & Temperatuursensoren in huis</h2>
+                    <p className="text-xs text-slate-400">Exacte waarden uit Woonkamer, Badkamer, Slaapkamer, Zolder en Meterkast</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-5">
+                {INITIAL_CLIMATE_ZONES.map(zone => (
+                  <div 
+                    key={zone.id} 
+                    className={`rounded-2xl p-5 border flex flex-col justify-between ${
+                      zone.highlight 
+                        ? 'bg-gradient-to-b from-amber-500/15 to-[#0f1723] border-amber-500/40' 
+                        : 'bg-[#0f1723] border-slate-800/90'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-white">{zone.name}</h3>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          {zone.battery}% accu
+                        </span>
+                      </div>
+
+                      <div className="my-6 flex items-center gap-2">
+                        <Thermometer className="w-6 h-6 text-amber-400" />
+                        <span className="text-3xl font-extrabold text-white tracking-tight">{zone.temp}</span>
+                        <span className="text-lg font-bold text-slate-400">°C</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Droplets className="w-3.5 h-3.5 text-sky-400" /> Luchtvochtigheid
+                      </span>
+                      <span className="font-bold text-white">{zone.humidity}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bewegingsmelders Status */}
+              <div className="mt-6 pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-[#0f1723] border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-white">meterkast bewegingsmelder</p>
+                    <p className="text-[11px] text-slate-400">Bewegingsalarm: Uit • Accuniveau: 100%</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-semibold">OK</span>
+                </div>
+                <div className="p-4 rounded-xl bg-[#0f1723] border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-white">warmtepomp bewegingsmelder</p>
+                    <p className="text-[11px] text-slate-400">Bewegingsalarm: Uit • Accuniveau: 100%</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-semibold">OK</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* ==================== MODAL 1: HOMEY API & GROEPEN INSTELLINGEN ==================== */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#131d2b] border border-slate-700/80 rounded-2xl max-w-xl w-full p-6 shadow-2xl my-8 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-amber-400 font-bold">JOUW HOMEY PRO KOPPELING</p>
+                <h3 className="text-lg font-bold text-white">Homey IP, API-sleutel & Flows</h3>
+              </div>
+              <button 
+                onClick={() => setShowSettingsModal(false)}
+                className="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto pr-1 space-y-5 my-4 flex-1">
+              {/* API Connection Section */}
+              <div className="p-4 rounded-xl bg-[#0f1723] border border-slate-800 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-medium">Lokaal Homey IP-adres</label>
+                    <input 
+                      type="text" 
+                      value={homeyIp}
+                      onChange={e => setHomeyIp(e.target.value)}
+                      placeholder="Bijv. 192.168.1.50"
+                      className="w-full mt-1 bg-[#162233] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-medium">Jouw Homey Cloud ID (uit foto)</label>
+                    <input 
+                      type="text" 
+                      value={homeyId}
+                      onChange={e => setHomeyId(e.target.value)}
+                      className="w-full mt-1 bg-[#162233] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 font-medium">Homey API-sleutel (via my.homey.app → Instellingen → API Keys)</label>
+                  <input 
+                    type="password" 
+                    value={homeyApiKey}
+                    onChange={e => setHomeyApiKey(e.target.value)}
+                    placeholder="Plak hier je Homey Bearer API Key..."
+                    className="w-full mt-1 bg-[#162233] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Per Group Flow Configuration */}
+              {rooms.map(room => (
+                <div key={room.id} className="pb-4 border-b border-slate-800/80 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-white">{room.name}</h4>
+                    <button 
+                      onClick={() => { setSelectedRoomId(room.id); setShowSettingsModal(false); setShowEditListModal(true); }}
+                      className="text-xs text-amber-400 hover:underline"
+                    >
+                      ▸ Apparaten kiezen ({room.totalCount} geselecteerd)
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-slate-400">Actie bij Aan</label>
+                      <select className="w-full mt-1 bg-[#0f1723] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+                        {AVAILABLE_FLOWS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-400">Actie bij Uit</label>
+                      <select className="w-full mt-1 bg-[#0f1723] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+                        {AVAILABLE_FLOWS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => { fetchHomeyData(); setShowSettingsModal(false); }}
+              className="w-full py-3 rounded-xl bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 border border-amber-500/40 font-bold text-xs transition"
+            >
+              Instellingen bewaren & Verbinden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAL 2: LIJST AANPASSEN ==================== */}
+      {showEditListModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#131d2b] border border-slate-700/80 rounded-2xl max-w-md w-full p-6 shadow-2xl max-h-[88vh] flex flex-col">
+            {(() => {
+              const currentRoom = rooms.find(r => r.id === selectedRoomId) || rooms[0];
+              const roomLights = lights[currentRoom.id] || [];
+              return (
+                <>
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-amber-400 font-bold">JOUW GROEP • JOUW VOLGORDE</p>
+                      <h3 className="text-base font-bold text-white">Lijst aanpassen • {currentRoom.name}</h3>
+                    </div>
+                    <button 
+                      onClick={() => setShowEditListModal(false)}
+                      className="p-1.5 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="overflow-y-auto space-y-2 pr-1 my-3 flex-1">
+                    {roomLights.map((light, idx) => (
+                      <div 
+                        key={light.id}
+                        className="p-2.5 rounded-xl bg-[#0f1723] border border-slate-800 flex items-center justify-between"
+                      >
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input 
+                            type="checkbox"
+                            checked={light.selected}
+                            onChange={() => toggleLightSelection(currentRoom.id, light.id)}
+                            className="w-4 h-4 rounded accent-amber-400"
+                          />
+                          <span className="text-xs font-medium text-white">{light.name}</span>
+                        </label>
+
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={() => moveLightInList(currentRoom.id, idx, -1)}
+                            disabled={idx === 0}
+                            className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => moveLightInList(currentRoom.id, idx, 1)}
+                            disabled={idx === roomLights.length - 1}
+                            className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                    <button 
+                      onClick={() => setShowEditListModal(false)}
+                      className="px-4 py-2 rounded-xl bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 border border-amber-500/40 text-xs font-bold"
+                    >
+                      Bewaren
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MODAL 3: CAMERA VERGROTEN ==================== */}
+      {enlargedCamera && (
+        <div 
+          onClick={() => setEnlargedCamera(null)}
+          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-[#131d2b] border border-slate-700 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl"
+          >
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <span className="text-sm font-bold text-white">{enlargedCamera.name} ({enlargedCamera.zone})</span>
+              <button 
+                onClick={() => setEnlargedCamera(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="aspect-video bg-black">
+              <img src={enlargedCamera.image} alt={enlargedCamera.name} className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="border-t border-slate-800/70 py-3 px-4 lg:px-8 text-[11px] text-slate-500 flex flex-wrap items-center justify-between">
+        <span>Homey Pro Dashboard • Homey ID: {homeyId}</span>
+        <span>Alle 26 lampen/stekkers, 5 temperatuursensoren, Wasmachine/Droger/Vaatwasser/Oven & P1 Dongle gekoppeld</span>
+      </footer>
+    </div>
+  );
+}
